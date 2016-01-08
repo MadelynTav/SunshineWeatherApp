@@ -3,9 +3,11 @@ package com.example.android.sunshine.app;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v4.view.MenuItemCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,67 +16,62 @@ import android.widget.TextView;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class DetailActivityFragment extends ActionBarActivity {
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_detail);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
-                    .commit();
-        }
-
+public class DetailActivityFragment extends Fragment {
+    TextView textView;
+    String details;
+    public DetailActivityFragment() {
+        setHasOptionsMenu(true);
 
     }
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View rootView = inflater.inflate(R.layout.fragment_detail2, container, false);
+        textView= (TextView) rootView.findViewById(R.id.textView);
+        Intent intent= getActivity().getIntent();
+        details= intent.getStringExtra("forecast");
+        textView.setText(details);
+
+
+
+    return rootView;
+    }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_detail, menu);
-        return true;
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+       inflater.inflate(R.menu.detail_fragment,menu);
+
+    }
+
+    private Intent createShareForecastIntent(){
+
+        //TODO fix intent to share
+        Intent shareIntent= new Intent(Intent.ACTION_SEND);
+        shareIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT,details);
+        Log.d("Details",details);
+
+        return shareIntent;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        int id=item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+        if (id == R.id.share){
 
-        return super.onOptionsItemSelected(item);
-    }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
+            android.support.v7.widget.ShareActionProvider shareActionProvider= (android.support.v7.widget.ShareActionProvider) MenuItemCompat
+                    .getActionProvider(item);
 
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-
-            View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
-
-            TextView textView= (TextView) rootView.findViewById(R.id.textView);
-            Intent intent= getActivity().getIntent();
-            if (intent!=null) {
-
-                String info = intent.getStringExtra("forecast");
-                textView.setText(info);
+            if (shareActionProvider != null){
+                shareActionProvider.setShareIntent(createShareForecastIntent());
+            } else{
+                Log.e("Invalid Intent","Cannot Share Forecast");
             }
-
-            return rootView;
         }
+        return super.onOptionsItemSelected(item);
     }
 }

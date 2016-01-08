@@ -1,7 +1,11 @@
 package com.example.android.sunshine.app;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -35,8 +39,27 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            Intent intent= new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+        } else if(id == R.id.currentLocation){
+            Intent intent= new Intent(Intent.ACTION_VIEW);
+
+            String zipCode= PreferenceManager
+                    .getDefaultSharedPreferences(this)
+                    .getString(getString(R.string.zipcode_key),getString(R.string.unit_default));
+
+            Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
+                    .appendQueryParameter("q",zipCode).build();
+            intent.setData(geoLocation);
+
+            if (intent.resolveActivity(getPackageManager())!=null){
+                startActivity(intent);
+
+            } else{
+                Log.e("NF","No Activity Found To Handle Intent");
+            }
         }
+
 
         return super.onOptionsItemSelected(item);
     }

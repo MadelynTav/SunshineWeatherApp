@@ -1,9 +1,11 @@
 package com.example.android.sunshine.app;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -29,8 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by c4q-madelyntavarez on 12/27/15.
@@ -52,27 +52,37 @@ public class ForecastFragment extends Fragment {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            String[] weekForecast = {"Fun","Fin","Tap","Top","TOM"};
-            List<String> listOfForeCast= new ArrayList<>(Arrays.asList(weekForecast));
 
             listView= (ListView) rootView.findViewById(R.id.list_view_w);
-            adapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item_forecast, R.id.list_item_forecast_textview, listOfForeCast);
+
+            adapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item_forecast, R.id.list_item_forecast_textview, new ArrayList<String>());
             listView.setAdapter(adapter);
 
-            fetchWeatherTask= new FetchWeatherTask();
-            fetchWeatherTask.execute("10040");
 
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent= new Intent(getActivity(),DetailActivity.class);
-                intent.putExtra("forecast",adapter.getItem(position));
+                Intent intent = new Intent(getActivity(), DetailActivity.class);
+                intent.putExtra("forecast", adapter.getItem(position));
                 startActivity(intent);
             }
         });
         return rootView;
 
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
+    }
+
+    public void updateWeather(){
+        fetchWeatherTask= new FetchWeatherTask();
+        SharedPreferences sharedPreferences= PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location= sharedPreferences.getString(getString(R.string.zipcode_key),getString(R.string.default_zipcode));
+        fetchWeatherTask.execute(location);
     }
 
 
@@ -85,8 +95,8 @@ public class ForecastFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId= item.getItemId();
         if (itemId==R.id.action_refresh) {
-            FetchWeatherTask fetchWeatherTask= new FetchWeatherTask();
-            fetchWeatherTask.execute("10040");
+            updateWeather();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -107,7 +117,8 @@ public class ForecastFragment extends Fragment {
                 // http://openweathermap.org/API#forecast
 
                 String format = "json";
-                String units = "metric";
+                SharedPreferences sharedPreferences= PreferenceManager.getDefaultSharedPreferences(getActivity());
+                String units = sharedPreferences.getString(getString(R.string.unit_key),getString(R.string.unit_default));
                 int numDays = 7;
 
                 try {
@@ -212,6 +223,19 @@ public class ForecastFragment extends Fragment {
          */
         private String formatHighLows(double high, double low) {
             // For presentation, assume the user doesn't care about tenths of a degree.
+            SharedPreferences sharedPreferences= PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String unitType= sharedPreferences.getString(getString(R.string.unit_key),getString(R.string.unit_default));
+
+            if (unitType.equals(R.string.imperial))
+            {
+                high= (high * 1.8) + 32;
+                low= (low * 1.8) + 32;
+
+
+            } else if(!unitType.equals(R.string.metric)){
+
+            }
+
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
 
